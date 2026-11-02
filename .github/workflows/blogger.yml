@@ -1,0 +1,35 @@
+name: Blogger Daily Post
+
+on:
+  schedule:
+    - cron: "30 3 * * *"   # roz 9:00 AM IST
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: Generate and post
+        env:
+          BLOG_ID: ${{ secrets.BLOG_ID }}
+          G_CLIENT_ID: ${{ secrets.G_CLIENT_ID }}
+          G_CLIENT_SECRET: ${{ secrets.G_CLIENT_SECRET }}
+          G_REFRESH_TOKEN: ${{ secrets.G_REFRESH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          IS_DRAFT: "true"   # review ke baad "false" kar do
+        run: python blogger_post.py
+      - name: Save progress
+        run: |
+          git config user.name "bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add done.txt
+          git commit -m "update done topics" || exit 0
+          git push
